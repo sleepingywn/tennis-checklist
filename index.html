@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CourtReady">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    <title>CourtReady — Tennis Packing Checklist</title>
+
+    <!-- Dynamic Apple Touch Icon & Inline PWA Manifest Setup -->
+    <link id="apple-touch-icon-link" rel="apple-touch-icon" sizes="180x180" href="">
+    <link id="favicon-link" rel="icon" type="image/png" href="">
+    <link rel="manifest" href='data:application/manifest+json,{"name":"CourtReady Tennis Checklist","short_name":"CourtReady","start_url":".","display":"standalone","background_color":"#0B1510","theme_color":"#0f172a","orientation":"portrait-primary"}'>
+
+    <script>
+        // Dynamically generate a crisp 180x180 PNG icon for iOS "Add to Home Screen"
+        (function generateAppIcon() {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 180;
+                canvas.height = 180;
+                const ctx = canvas.getContext('2d');
+
+                // Dark Slate / Court Green Background
+                const bgGrad = ctx.createLinearGradient(0, 0, 180, 180);
+                bgGrad.addColorStop(0, '#0f172a');
+                bgGrad.addColorStop(1, '#0B1510');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, 180, 180);
+
+                // Subtle Court Lines
+                ctx.strokeStyle = 'rgba(212, 255, 0, 0.12)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(18, 18, 144, 144);
+                ctx.beginPath();
+                ctx.moveTo(18, 90);
+                ctx.lineTo(162, 90);
+                ctx.stroke();
+
+                // High-Contrast Tennis Ball Badge
+                const cx = 90, cy = 90, r = 52;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.fillStyle = '#D4FF00';
+                ctx.shadowColor = 'rgba(212, 255, 0, 0.35)';
+                ctx.shadowBlur = 20;
+                ctx.fill();
+                ctx.clip();
+
+                // Tennis Ball Seams
+                ctx.strokeStyle = '#0B1510';
+                ctx.lineWidth = 8;
+                ctx.lineCap = 'round';
+
+                ctx.beginPath();
+                ctx.arc(cx - 46, cy, 40, -Math.PI / 2.2, Math.PI / 2.2);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(cx + 46, cy, 40, Math.PI - Math.PI / 2.2, Math.PI + Math.PI / 2.2);
+                ctx.stroke();
+                ctx.restore();
+
+                // Outer Ring
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.strokeStyle = '#0B1510';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                const dataUrl = canvas.toDataURL('image/png');
+                const touchIcon = document.getElementById('apple-touch-icon-link');
+                const favIcon = document.getElementById('favicon-link');
+                if (touchIcon) touchIcon.href = dataUrl;
+                if (favIcon) favIcon.href = dataUrl;
+            } catch (e) {
+                console.warn('Could not generate dynamic touch icon', e);
+            }
+        })();
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        tennis: {
+                            lime: '#D4FF00',
+                            limeDark: '#b3d900',
+                            court: '#1B4D3E',
+                            courtDark: '#0F291E',
+                            clay: '#E06D53',
+                            hard: '#2B5B84'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B1510;
+            color: #F8FAFC;
+            overflow-x: hidden;
+            overscroll-behavior-y: none;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* iOS Native App Touch & Selection Optimizations */
+        button, .item-row, header, .no-select {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+            touch-action: manipulation;
+        }
+
+        /* Safe Area Insets for iPhone Notch / Dynamic Island & Home Indicator */
+        .safe-header {
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+        }
+
+        .safe-main {
+            padding-left: max(1rem, env(safe-area-inset-left, 0px));
+            padding-right: max(1rem, env(safe-area-inset-right, 0px));
+            padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+        }
+
+        .safe-toast {
+            bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* Subtle tennis court line pattern background */
+        .court-bg {
+            background-color: #0B1510;
+            background-image: 
+                linear-gradient(rgba(212, 255, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 255, 0, 0.03) 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+
+        /* Smooth strike-through effect */
+        .strike-text {
+            position: relative;
+            transition: color 0.25s ease;
+        }
+        .strike-text::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 0;
+            height: 2px;
+            background-color: #D4FF00;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .item-checked .strike-text {
+            color: #64748B;
+        }
+        .item-checked .strike-text::after {
+            width: 100%;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B1510;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E3A2F;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4FF00;
+        }
+
+        /* Custom checkbox animation */
+        .checkbox-box {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .item-row:active .checkbox-box {
+            transform: scale(0.9);
+        }
+
+        @keyframes pulse-lime {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(212, 255, 0, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(212, 255, 0, 0); }
+        }
+        .celebrate-glow {
+            animation: pulse-lime 2s infinite;
+        }
+    </style>
+</head>
+<body class="court-bg min-h-screen flex flex-col selection:bg-tennis-lime selection:text-tennis-courtDark">
+
+    <!-- Confetti Canvas Overlay -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
+
+    <!-- Sticky Header & Completion Progress Bar (Safe-Area Aware) -->
+    <header class="safe-header sticky top-0 z-40 backdrop-blur-xl bg-[#0B1510]/90 border-b border-emerald-900/60 shadow-2xl transition-all duration-300">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                
+                <!-- Brand & Title -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-tennis-lime flex items-center justify-center text-tennis-courtDark shadow-lg shadow-tennis-lime/20 relative overflow-hidden flex-shrink-0">
+                            <!-- Tennis Ball Seam SVG -->
+                            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M4.93 4.93c4.5 4.5 4.5 9.64 0 14.14" />
+                                <path d="M19.07 4.93c-4.5 4.5-4.5 9.64 0 14.14" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white">COURT<span class="text-tennis-lime">READY</span></h1>
+                                <span id="ready-badge" class="hidden px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider bg-tennis-lime text-tennis-courtDark rounded-full shadow-sm">
+                                    Match Ready!
+                                </span>
+                            </div>
+                            <p class="text-xs text-emerald-300/70 font-medium">Tennis Gear & Match Prep Checklist</p>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Quick Stats -->
+                    <div class="sm:hidden text-right">
+                        <span id="mobile-percent" class="text-2xl font-extrabold text-tennis-lime">0%</span>
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex items-center gap-2 self-end sm:self-auto">
+                    <button id="filter-unpacked-btn" onclick="toggleFilterUnpacked()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-950/80 text-emerald-200 border border-emerald-800/70 hover:border-tennis-lime/50 hover:text-white transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                        <span id="filter-btn-text">Show Unpacked</span>
+                    </button>
+                    <button onclick="openModal('reset')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-950/80 text-emerald-200 border border-emerald-800/70 hover:border-tennis-lime/50 hover:text-white transition flex items-center gap-1.5" title="Uncheck all items for next session">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span>Reset Session</span>
+                    </button>
+                    <button onclick="openModal('restore')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900/80 text-stone-400 border border-stone-800 hover:border-red-500/40 hover:text-red-300 transition flex items-center gap-1.5" title="Restore original default items">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <span class="hidden md:inline">Restore Defaults</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Completion Bar Section -->
+            <div class="mt-4">
+                <div class="flex justify-between items-end mb-1.5">
+                    <div class="flex items-center gap-2">
+                        <span id="progress-status-text" class="text-xs sm:text-sm font-semibold text-emerald-100">Let's pack your bag!</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span id="progress-count-badge" class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+                            0 / 20 packed
+                        </span>
+                        <span id="desktop-percent" class="hidden sm:inline text-lg font-extrabold text-tennis-lime">0%</span>
+                    </div>
+                </div>
+
+                <!-- Bar Track -->
+                <div id="progress-track" class="w-full h-3.5 bg-emerald-950/90 rounded-full overflow-hidden border border-emerald-800/80 p-0.5 shadow-inner">
+                    <div id="progress-fill" class="h-full rounded-full bg-gradient-to-r from-emerald-500 via-lime-400 to-tennis-lime transition-all duration-500 ease-out relative" style="width: 0%">
+                        <div class="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 100% Congratulatory Banner -->
+            <div id="congrats-banner" class="hidden mt-3 p-3 rounded-xl bg-gradient-to-r from-tennis-lime/20 via-emerald-900/40 to-tennis-lime/10 border border-tennis-lime/50 flex items-center justify-between gap-3 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-tennis-lime text-tennis-courtDark flex items-center justify-center font-bold text-lg flex-shrink-0">
+                        🏆
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-white">100% Packed & Ready to Hit the Court!</p>
+                        <p class="text-xs text-emerald-200/80">All your gear, apparel, hydration, and prep items are accounted for. Play a great session!</p>
+                    </div>
+                </div>
+                <button onclick="openModal('reset')" class="px-3 py-1.5 rounded-lg bg-tennis-lime text-tennis-courtDark font-bold text-xs hover:bg-tennis-limeDark transition flex-shrink-0 shadow-md">
+                    New Session
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Checklist Content -->
+    <main class="safe-main flex-grow max-w-5xl w-full mx-auto sm:px-6 pt-6 sm:pt-8">
+        <!-- Categories Grid -->
+        <div id="categories-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <!-- Populated dynamically by JavaScript -->
+        </div>
+    </main>
+
+    <!-- Confirmation & Edit Modal -->
+    <div id="modal-backdrop" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-[#11221A] border border-emerald-800 rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div id="modal-icon" class="w-10 h-10 rounded-xl bg-tennis-lime/10 border border-tennis-lime/30 flex items-center justify-center text-tennis-lime">
+                        <!-- Icon injected via JS -->
+                    </div>
+                    <h3 id="modal-title" class="text-lg font-bold text-white">Confirm Action</h3>
+                </div>
+                <button onclick="closeModal()" class="text-emerald-400/60 hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <p id="modal-body" class="text-sm text-emerald-100/80 mb-5 leading-relaxed"></p>
+
+            <!-- Optional Edit Input (text-base prevents iOS Safari auto-zoom on focus) -->
+            <div id="modal-input-wrapper" class="hidden mb-5">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-1.5">Item Name</label>
+                <input id="modal-edit-input" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-emerald-950/90 border border-emerald-700 text-white text-base sm:text-sm focus:outline-none focus:border-tennis-lime" placeholder="Enter item name..." />
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-950 text-emerald-200 hover:bg-emerald-900 transition">
+                    Cancel
+                </button>
+                <button id="modal-confirm-btn" class="px-4 py-2 rounded-xl text-xs font-bold bg-tennis-lime text-tennis-courtDark hover:bg-tennis-limeDark transition shadow-lg">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="safe-toast fixed right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-[#13281E] border border-tennis-lime/40 text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-tennis-lime"></span>
+            <span id="toast-message">Action completed</span>
+        </div>
+    </div>
+
+    <script>
+        // --- Default Checklist Data ---
+        const DEFAULT_CHECKLIST = [
+            {
+                id: 'sports-equipment',
+                title: 'Sports Equipment',
+                subtitle: 'On-court essentials',
+                icon: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="15" cy="9" r="6"/><path d="M10.7 13.3 3 21"/><path d="m6 18 3 3"/><circle cx="6" cy="8" r="2"/></svg>`,
+                items: [
+                    { id: 'eq-1', text: 'Racket', checked: false },
+                    { id: 'eq-2', text: 'Balls', checked: false },
+                    { id: 'eq-3', text: 'Grip powder', checked: false }
+                ]
+            },
+            {
+                id: 'training-apparel',
+                title: 'Training Apparel',
+                subtitle: 'Match & practice wear',
+                icon: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>`,
+                items: [
+                    { id: 'ap-1', text: 'Shoe', checked: false },
+                    { id: 'ap-2', text: 'Training shirt', checked: false },
+                    { id: 'ap-3', text: 'Training shorts', checked: false },
+                    { id: 'ap-4', text: 'Socks', checked: false },
+                    { id: 'ap-5', text: 'Wristband', checked: false },
+                    { id: 'ap-6', text: 'Cap', checked: false }
+                ]
+            },
+            {
+                id: 'extra-clothing',
+                title: 'Extra Clothing',
+                subtitle: 'Post-match fresh change',
+                icon: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
+                items: [
+                    { id: 'ex-1', text: 'Extra shirt', checked: false },
+                    { id: 'ex-2', text: 'Extra shorts', checked: false },
+                    { id: 'ex-3', text: 'Extra Underwear', checked: false }
+                ]
+            },
+            {
+                id: 'hygiene-hydration',
+                title: 'Hygiene & Hydration',
+                subtitle: 'Recovery & refreshment',
+                icon: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+                items: [
+                    { id: 'hy-1', text: 'Water bottle', checked: false },
+                    { id: 'hy-2', text: 'Towel', checked: false },
+                    { id: 'hy-3', text: 'Soap', checked: false }
+                ]
+            },
+            {
+                id: 'misc-prep',
+                title: 'Miscellaneous & Prep',
+                subtitle: 'Tech & post-session gear',
+                icon: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+                items: [
+                    { id: 'mi-1', text: 'Plastic bag x3', checked: false },
+                    { id: 'mi-2', text: 'Charge phone', checked: false },
+                    { id: 'mi-3', text: 'Laptop', checked: false },
+                    { id: 'mi-4', text: 'Laptop Charger', checked: false },
+                    { id: 'mi-5', text: 'Laptop Mouse', checked: false }
+                ]
+            }
+        ];
+
+        const STORAGE_KEY = 'courtready_tennis_checklist_v1';
+        let checklistData = [];
+        let filterUnpackedOnly = false;
+        let lastCelebratedState = false;
+
+        // --- Initialize State ---
+        function loadChecklist() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    checklistData = JSON.parse(saved);
+                } else {
+                    checklistData = JSON.parse(JSON.stringify(DEFAULT_CHECKLIST));
+                }
+            } catch (e) {
+                checklistData = JSON.parse(JSON.stringify(DEFAULT_CHECKLIST));
+            }
+        }
+
+        function saveChecklist() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(checklistData));
+            } catch (e) {
+                console.error('Could not save to localStorage', e);
+            }
+        }
+
+        // --- Calculate & Update Overall Progress ---
+        function updateOverallProgress() {
+            let totalItems = 0;
+            let checkedItems = 0;
+
+            checklistData.forEach(cat => {
+                totalItems += cat.items.length;
+                checkedItems += cat.items.filter(item => item.checked).length;
+            });
+
+            const percent = totalItems === 0 ? 0 : Math.round((checkedItems / totalItems) * 100);
+
+            // Update DOM elements
+            document.getElementById('mobile-percent').textContent = `${percent}%`;
+            document.getElementById('desktop-percent').textContent = `${percent}%`;
+            document.getElementById('progress-count-badge').textContent = `${checkedItems} / ${totalItems} packed`;
+            document.getElementById('progress-fill').style.width = `${percent}%`;
+
+            const statusText = document.getElementById('progress-status-text');
+            const readyBadge = document.getElementById('ready-badge');
+            const congratsBanner = document.getElementById('congrats-banner');
+            const progressTrack = document.getElementById('progress-track');
+
+            if (totalItems === 0) {
+                statusText.textContent = 'Add items to start packing!';
+                readyBadge.classList.add('hidden');
+                congratsBanner.classList.add('hidden');
+                progressTrack.classList.remove('celebrate-glow');
+                lastCelebratedState = false;
+            } else if (percent === 100) {
+                statusText.innerHTML = '<span class="text-tennis-lime font-bold">All set! Game, Set, Match! 🎾</span>';
+                readyBadge.classList.remove('hidden');
+                congratsBanner.classList.remove('hidden');
+                progressTrack.classList.add('celebrate-glow');
+                if (!lastCelebratedState) {
+                    launchConfetti();
+                    lastCelebratedState = true;
+                }
+            } else {
+                readyBadge.classList.add('hidden');
+                congratsBanner.classList.add('hidden');
+                progressTrack.classList.remove('celebrate-glow');
+                lastCelebratedState = false;
+
+                if (percent === 0) {
+                    statusText.textContent = "Let's pack your tennis bag!";
+                } else if (percent < 40) {
+                    statusText.textContent = 'Warming up — keep packing...';
+                } else if (percent < 80) {
+                    statusText.textContent = 'Good rally! More than halfway packed.';
+                } else {
+                    statusText.textContent = 'Match point! Just a few items left.';
+                }
+            }
+        }
+
+        // --- Render Categories & Items ---
+        function renderChecklist() {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = '';
+
+            checklistData.forEach((category, catIndex) => {
+                const totalCat = category.items.length;
+                const checkedCat = category.items.filter(i => i.checked).length;
+                const catPercent = totalCat === 0 ? 0 : Math.round((checkedCat / totalCat) * 100);
+                const allChecked = totalCat > 0 && checkedCat === totalCat;
+
+                // Filter items if "Show Unpacked" is active
+                const visibleItems = filterUnpackedOnly
+                    ? category.items.filter(i => !i.checked)
+                    : category.items;
+
+                const card = document.createElement('section');
+                // Make the 5th category span full width on medium+ screens if there are 5 categories
+                const spanClass = (catIndex === checklistData.length - 1 && checklistData.length % 2 !== 0)
+                    ? 'md:col-span-2'
+                    : '';
+
+                card.className = `rounded-2xl bg-[#102119]/90 border ${allChecked ? 'border-tennis-lime/50 shadow-lg shadow-tennis-lime/5' : 'border-emerald-900/70'} p-5 transition-all duration-300 flex flex-col justify-between ${spanClass}`;
+
+                const itemsHtml = visibleItems.length === 0
+                    ? `<div class="py-6 text-center text-xs text-emerald-400/50 italic">
+                        ${filterUnpackedOnly && totalCat > 0 ? 'All items in this category are packed! 🎾' : 'No items in this category yet.'}
+                       </div>`
+                    : visibleItems.map(item => `
+                        <div class="item-row group flex items-center justify-between gap-2 p-2.5 rounded-xl hover:bg-emerald-950/60 border border-transparent hover:border-emerald-800/50 transition cursor-pointer select-none ${item.checked ? 'item-checked bg-emerald-950/25' : ''}"
+                             onclick="toggleItem('${category.id}', '${item.id}')">
+                            
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <!-- Custom Checkbox -->
+                                <div class="checkbox-box w-5 h-5 rounded-md flex items-center justify-center transition-colors flex-shrink-0 ${
+                                    item.checked 
+                                    ? 'bg-tennis-lime text-tennis-courtDark border-tennis-lime shadow-sm shadow-tennis-lime/30' 
+                                    : 'bg-emerald-950/90 border-2 border-emerald-700 group-hover:border-tennis-lime/70'
+                                }">
+                                    ${item.checked ? `<svg class="w-3.5 h-3.5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>` : ''}
+                                </div>
+                                
+                                <!-- Item Label -->
+                                <span class="strike-text text-sm font-medium text-emerald-50 truncate">${escapeHtml(item.text)}</span>
+                            </div>
+
+                            <!-- Edit & Delete Controls -->
+                            <div class="flex items-center gap-1 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                <button onclick="openEditItemModal('${category.id}', '${item.id}')" class="p-1.5 rounded-lg text-emerald-400/70 hover:text-tennis-lime hover:bg-emerald-900/50 transition" title="Edit item">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </button>
+                                <button onclick="deleteItem('${category.id}', '${item.id}')" class="p-1.5 rounded-lg text-emerald-400/70 hover:text-red-400 hover:bg-red-950/40 transition" title="Delete item">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+
+                card.innerHTML = `
+                    <div>
+                        <!-- Category Header -->
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl ${allChecked ? 'bg-tennis-lime text-tennis-courtDark' : 'bg-emerald-950 text-tennis-lime border border-emerald-800/80'} flex items-center justify-center transition-colors flex-shrink-0">
+                                    ${category.icon}
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h2 class="text-base font-bold text-white">${escapeHtml(category.title)}</h2>
+                                        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${allChecked ? 'bg-tennis-lime/20 text-tennis-lime border border-tennis-lime/40' : 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'}">
+                                            ${checkedCat}/${totalCat}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-emerald-400/70">${escapeHtml(category.subtitle)}</p>
+                                </div>
+                            </div>
+
+                            <!-- Quick Check/Uncheck Category Toggle -->
+                            <button onclick="toggleCategoryAll('${category.id}')" 
+                                    class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition flex-shrink-0 ${
+                                        allChecked 
+                                        ? 'border-emerald-800 bg-emerald-950/60 text-emerald-300 hover:text-white hover:border-emerald-600' 
+                                        : 'border-tennis-lime/30 bg-tennis-lime/10 text-tennis-lime hover:bg-tennis-lime hover:text-tennis-courtDark'
+                                    }">
+                                ${allChecked ? 'Uncheck All' : 'Check All'}
+                            </button>
+                        </div>
+
+                        <!-- Category Mini Progress Bar -->
+                        <div class="w-full h-1.5 bg-emerald-950 rounded-full overflow-hidden mb-4">
+                            <div class="h-full bg-tennis-lime transition-all duration-300 rounded-full" style="width: ${catPercent}%"></div>
+                        </div>
+
+                        <!-- Items List -->
+                        <div class="space-y-1 mb-4 ${catIndex === checklistData.length - 1 && checklistData.length % 2 !== 0 ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 space-y-0' : ''}">
+                            ${itemsHtml}
+                        </div>
+                    </div>
+
+                    <!-- Add New Item Form (text-base on mobile prevents iOS Safari zoom) -->
+                    <form onsubmit="addItem(event, '${category.id}')" class="mt-2 pt-3 border-t border-emerald-900/50 flex gap-2">
+                        <input type="text" id="input-${category.id}" placeholder="Add item to ${escapeHtml(category.title)}..." 
+                               class="flex-1 min-w-0 bg-emerald-950/70 border border-emerald-800/80 rounded-xl px-3 py-2 text-base sm:text-xs text-white placeholder-emerald-500/60 focus:outline-none focus:border-tennis-lime transition" />
+                        <button type="submit" class="px-3.5 py-2 rounded-xl bg-emerald-900/70 hover:bg-tennis-lime text-emerald-200 hover:text-tennis-courtDark font-bold text-xs transition flex items-center gap-1 flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                            <span>Add</span>
+                        </button>
+                    </form>
+                `;
+
+                container.appendChild(card);
+            });
+
+            updateOverallProgress();
+        }
+
+        // --- Item & Category Interactions ---
+        function toggleItem(categoryId, itemId) {
+            const cat = checklistData.find(c => c.id === categoryId);
+            if (!cat) return;
+            const item = cat.items.find(i => i.id === itemId);
+            if (!item) return;
+
+            item.checked = !item.checked;
+            saveChecklist();
+            renderChecklist();
+        }
+
+        function toggleCategoryAll(categoryId) {
+            const cat = checklistData.find(c => c.id === categoryId);
+            if (!cat || cat.items.length === 0) return;
+
+            const allChecked = cat.items.every(i => i.checked);
+            cat.items.forEach(i => i.checked = !allChecked);
+
+            saveChecklist();
+            renderChecklist();
+            showToast(allChecked ? `Unchecked all in ${cat.title}` : `Packed all in ${cat.title}!`);
+        }
+
+        function addItem(event, categoryId) {
+            event.preventDefault();
+            const input = document.getElementById(`input-${categoryId}`);
+            const text = input.value.trim();
+            if (!text) return;
+
+            const cat = checklistData.find(c => c.id === categoryId);
+            if (!cat) return;
+
+            cat.items.push({
+                id: 'custom-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                text: text,
+                checked: false
+            });
+
+            input.value = '';
+            saveChecklist();
+            renderChecklist();
+            showToast(`Added "${text}"`);
+        }
+
+        function deleteItem(categoryId, itemId) {
+            const cat = checklistData.find(c => c.id === categoryId);
+            if (!cat) return;
+            const itemIndex = cat.items.findIndex(i => i.id === itemId);
+            if (itemIndex === -1) return;
+
+            const removed = cat.items.splice(itemIndex, 1)[0];
+            saveChecklist();
+            renderChecklist();
+            showToast(`Removed "${removed.text}"`);
+        }
+
+        function toggleFilterUnpacked() {
+            filterUnpackedOnly = !filterUnpackedOnly;
+            const btn = document.getElementById('filter-unpacked-btn');
+            const text = document.getElementById('filter-btn-text');
+
+            if (filterUnpackedOnly) {
+                btn.classList.add('border-tennis-lime', 'text-tennis-lime');
+                text.textContent = 'Showing Unpacked';
+            } else {
+                btn.classList.remove('border-tennis-lime', 'text-tennis-lime');
+                text.textContent = 'Show Unpacked';
+            }
+            renderChecklist();
+        }
+
+        // --- Modal Handling (Reset, Restore, Edit) ---
+        function openModal(type) {
+            const backdrop = document.getElementById('modal-backdrop');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+            const icon = document.getElementById('modal-icon');
+            const inputWrapper = document.getElementById('modal-input-wrapper');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+
+            inputWrapper.classList.add('hidden');
+            backdrop.classList.remove('hidden');
+            backdrop.classList.add('flex');
+
+            if (type === 'reset') {
+                title.textContent = 'Start New Packing Session?';
+                body.textContent = 'This will uncheck all packed items across every category so you can pack fresh for your next match or training session. Your custom items will be kept.';
+                icon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`;
+                confirmBtn.textContent = 'Uncheck All Items';
+                confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-tennis-lime text-tennis-courtDark hover:bg-tennis-limeDark transition shadow-lg';
+                confirmBtn.onclick = () => {
+                    checklistData.forEach(cat => cat.items.forEach(i => i.checked = false));
+                    saveChecklist();
+                    renderChecklist();
+                    closeModal();
+                    showToast('Checklist reset for your next session!');
+                };
+            } else if (type === 'restore') {
+                title.textContent = 'Restore Default Checklist?';
+                body.textContent = 'This will restore the original 20 default tennis checklist items and remove any custom additions or edits you have made.';
+                icon.innerHTML = `<svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+                confirmBtn.textContent = 'Restore Defaults';
+                confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-red-500 text-white hover:bg-red-600 transition shadow-lg';
+                confirmBtn.onclick = () => {
+                    checklistData = JSON.parse(JSON.stringify(DEFAULT_CHECKLIST));
+                    saveChecklist();
+                    renderChecklist();
+                    closeModal();
+                    showToast('Restored default tennis checklist');
+                };
+            }
+        }
+
+        function openEditItemModal(categoryId, itemId) {
+            const cat = checklistData.find(c => c.id === categoryId);
+            if (!cat) return;
+            const item = cat.items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const backdrop = document.getElementById('modal-backdrop');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+            const icon = document.getElementById('modal-icon');
+            const inputWrapper = document.getElementById('modal-input-wrapper');
+            const editInput = document.getElementById('modal-edit-input');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+
+            title.textContent = 'Edit Checklist Item';
+            body.textContent = `Update the item name or quantity for ${cat.title}.`;
+            icon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>`;
+            
+            inputWrapper.classList.remove('hidden');
+            editInput.value = item.text;
+
+            confirmBtn.textContent = 'Save Changes';
+            confirmBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-tennis-lime text-tennis-courtDark hover:bg-tennis-limeDark transition shadow-lg';
+            
+            const saveEdit = () => {
+                const updated = editInput.value.trim();
+                if (updated) {
+                    item.text = updated;
+                    saveChecklist();
+                    renderChecklist();
+                    closeModal();
+                    showToast('Item updated');
+                }
+            };
+
+            confirmBtn.onclick = saveEdit;
+            editInput.onkeydown = (e) => {
+                if (e.key === 'Enter') saveEdit();
+                if (e.key === 'Escape') closeModal();
+            };
+
+            backdrop.classList.remove('hidden');
+            backdrop.classList.add('flex');
+            setTimeout(() => editInput.focus(), 50);
+        }
+
+        function closeModal() {
+            const backdrop = document.getElementById('modal-backdrop');
+            backdrop.classList.add('hidden');
+            backdrop.classList.remove('flex');
+        }
+
+        // --- Toast Helper ---
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const msg = document.getElementById('toast-message');
+            msg.textContent = message;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 2400);
+        }
+
+        // --- Utility: Escape HTML ---
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // --- Lightweight Confetti Celebration ---
+        function launchConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#D4FF00', '#10B981', '#FBBF24', '#FFFFFF', '#34D399'];
+
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+                    y: canvas.height / 3,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 1) * 14 - 4,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    vr: (Math.random() - 0.5) * 10,
+                    opacity: 1
+                });
+            }
+
+            let frame = 0;
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+
+                particles.forEach(p => {
+                    if (p.opacity <= 0) return;
+                    active = true;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.35; // gravity
+                    p.rotation += p.vr;
+                    if (frame > 45) p.opacity -= 0.02;
+
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.opacity);
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                    ctx.restore();
+                });
+
+                frame++;
+                if (active && frame < 140) {
+                    requestAnimationFrame(animateConfetti);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            requestAnimationFrame(animateConfetti);
+        }
+
+        // --- Initialize App on Load ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadChecklist();
+            renderChecklist();
+        });
+    </script>
+</body>
+</html>
